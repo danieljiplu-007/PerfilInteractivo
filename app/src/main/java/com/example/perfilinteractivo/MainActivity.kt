@@ -32,9 +32,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import kotlinx.coroutines.launch
 import org.osmdroid.config.Configuration
-import org.osmdroid.tileprovider.tilesource.OnlineTileSourceBase
 import org.osmdroid.util.GeoPoint
-import org.osmdroid.util.MapTileIndex
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 
@@ -52,7 +51,7 @@ class MainActivity : ComponentActivity() {
         )
 
         Configuration.getInstance().userAgentValue =
-            "PerfilInteractivo/1.0"
+            "PerfilInteractivo/1.0 (com.example.perfilinteractivo)"
 
         setContent {
             MaterialTheme {
@@ -111,7 +110,6 @@ fun PantallaPerfil() {
                 .verticalScroll(rememberScrollState())
         ) {
 
-            // PORTADA CON IMAGEN REAL
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -130,7 +128,6 @@ fun PantallaPerfil() {
 
             Spacer(Modifier.height(18.dp))
 
-            // FOTOGRAFÍA CIRCULAR
             Image(
                 painter = painterResource(
                     id = R.drawable.img2
@@ -145,7 +142,6 @@ fun PantallaPerfil() {
 
             Spacer(Modifier.height(14.dp))
 
-            // NOMBRE Y CORREO
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -154,7 +150,7 @@ fun PantallaPerfil() {
             ) {
 
                 Text(
-                    text = "David de Jesús Hernández",
+                    text = "Daniel Jimenez PLuma",
                     fontSize = 23.sp,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
@@ -164,7 +160,7 @@ fun PantallaPerfil() {
                 Spacer(Modifier.height(6.dp))
 
                 Text(
-                    text = "daviddejesushh@gmail.com",
+                    text = "danieljip02@gmail.com",
                     fontSize = 14.sp,
                     color = Azul,
                     textAlign = TextAlign.Center
@@ -182,7 +178,6 @@ fun PantallaPerfil() {
 
             Spacer(Modifier.height(24.dp))
 
-            // ACERCA DE MÍ
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -201,18 +196,31 @@ fun PantallaPerfil() {
                     text = "Soy estudiante de Ingeniería en " +
                             "Tecnologías de la Información e " +
                             "Innovación Digital en la Universidad " +
-                            "Politécnica de Pachuca. Desarrollo " +
-                            "aplicaciones móviles con Kotlin y " +
-                            "Jetpack Compose, sistemas web con " +
-                            "PHP, Laravel y JavaScript, y trabajo " +
-                            "con bases de datos MongoDB Atlas y " +
-                            "PostgreSQL. También utilizo Linux, " +
-                            "Docker, Git y GitHub para desarrollar " +
-                            "y administrar mis proyectos.",
+                            "Politécnica de Pachuca. Me apasiona " +
+                            "el desarrollo de software, la tecnología " +
+                            "y la creación de soluciones digitales. " +
+                            "Tengo experiencia trabajando con Kotlin, " +
+                            "Jetpack Compose, Java, C++, PHP, Laravel " +
+                            "y JavaScript, además de bases de datos " +
+                            "como MongoDB y PostgreSQL. También " +
+                            "utilizo Linux, Docker, Git y GitHub " +
+                            "para desarrollar y administrar mis " +
+                            "proyectos. Siempre busco aprender " +
+                            "nuevas tecnologías y mejorar mis " +
+                            "habilidades como desarrollador. " +
+                            "Fuera de la programación tengo una " +
+                            "identidad secreta: soy Batman. Durante " +
+                            "el día escribo código y estudio ingeniería; " +
+                            "por las noches vigilo Gotham. Aunque " +
+                            "todavía espero que Alfred configure " +
+                            "correctamente mi entorno de desarrollo. " +
+                            "Mi lema: No todos los héroes usan capa, " +
+                            "algunos usan Kotlin. 🦇",
                     fontSize = 14.sp,
                     lineHeight = 22.sp,
                     color = Color(0xFF424242)
                 )
+
 
                 Spacer(Modifier.height(24.dp))
 
@@ -231,12 +239,10 @@ fun PantallaPerfil() {
                 )
             }
 
-            // DIEZ ETIQUETAS
             EtiquetasPerfil()
 
             Spacer(Modifier.height(16.dp))
 
-            // UBICACIÓN
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -264,7 +270,7 @@ fun PantallaPerfil() {
                 Spacer(Modifier.height(10.dp))
 
                 Text(
-                    text = "© OpenStreetMap contributors · © MapTiler",
+                    text = "© OpenStreetMap contributors",
                     fontSize = 11.sp,
                     color = Color.Gray
                 )
@@ -285,10 +291,10 @@ fun EtiquetasPerfil() {
         "C++",
         "PHP / Laravel",
         "JavaScript",
-        "MongoDB Atlas",
+        "MongoDB",
         "PostgreSQL",
-        "Docker",
-        "Git / GitHub"
+        "Linux / Docker",
+        "Batman 🦇"
     )
 
     val colores = listOf(
@@ -347,81 +353,21 @@ fun EtiquetasPerfil() {
     }
 }
 
+
 @Composable
 fun MapaPerfil() {
 
     val context = LocalContext.current
 
-    val apiKey = obtenerClaveMapTiler(context)
-
     val ubicacion = remember {
         GeoPoint(19.9806, -98.6847)
     }
 
-    if (
-        apiKey.isBlank() ||
-        apiKey == "TU_NUEVA_CLAVE"
-    ) {
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(260.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(Color(0xFFE3F2FD)),
-            contentAlignment = Alignment.Center
-        ) {
-
-            Text(
-                text = "Configura tu clave de MapTiler\n" +
-                        "en res/values/maptiler_keys.xml",
-                textAlign = TextAlign.Center,
-                color = Azul,
-                modifier = Modifier.padding(16.dp)
-            )
-        }
-
-        return
-    }
-
-    val mapa = remember(context, apiKey) {
+    val mapa = remember(context) {
 
         MapView(context).apply {
 
-            val fuente = object : OnlineTileSourceBase(
-                "MapTilerStreets",
-                0,
-                19,
-                256,
-                ".png",
-                arrayOf(
-                    "https://api.maptiler.com/"
-                )
-            ) {
-
-                override fun getTileURLString(
-                    pMapTileIndex: Long
-                ): String {
-
-                    val z = MapTileIndex.getZoom(
-                        pMapTileIndex
-                    )
-
-                    val x = MapTileIndex.getX(
-                        pMapTileIndex
-                    )
-
-                    val y = MapTileIndex.getY(
-                        pMapTileIndex
-                    )
-
-                    return "https://api.maptiler.com/" +
-                            "maps/streets-v2/256/" +
-                            "$z/$x/$y.png?key=$apiKey"
-                }
-            }
-
-            setTileSource(fuente)
+            setTileSource(TileSourceFactory.MAPNIK)
 
             setMultiTouchControls(true)
 
@@ -509,12 +455,4 @@ fun MapaPerfil() {
             }
         }
     }
-}
-
-fun obtenerClaveMapTiler(
-    context: android.content.Context
-): String {
-    return context.getString(
-        R.string.maptiler_api_key
-    )
 }
